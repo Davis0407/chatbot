@@ -265,57 +265,61 @@
         // --- COMUNICACIÓN CON GEMINI API ---
 
         async function fetchGeminiResponse(retryCount = 0) {
-            const maxRetries = 3;
-            const apiKey = "AQ.Ab8RN6JWDR5zLqv8VJq06O71NafiYg5n8ra_TuJKSKiw_LnFrQ"; // <--- RECUERDA PONER TU API KEY AQUÍ
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const maxRetries = 3;
+    const apiKey = "PEGA_AQUÍ_TU_API_KEY_REAL_QUE_EMPIEZA_CON_AIzaSy"; // <--- Pon tu clave real aquí
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
-            const payload = {
-                contents: chatHistory,
-                systemInstruction: {
-                    parts: [{ text: SYSTEM_INSTRUCTION }]
-                }
-            };
+    const payload = {
+        system_instruction: {  // <--- Corregido con guion bajo
+            parts: [{ text: SYSTEM_INSTRUCTION }]
+        },
+        contents: chatHistory
+    };
 
-            try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
+    try {
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
 
-                if (!response.ok) {
-                    throw new Error(`Error en la solicitud: ${response.status}`);
-                }
-
-                const result = await response.json();
-                hideTypingIndicator();
-
-                const candidate = result.candidates?.[0];
-                if (candidate && candidate.content?.parts?.[0]?.text) {
-                    const reply = candidate.content.parts[0].text;
-                    renderMessage({ role: 'model', text: reply });
-                    chatHistory.push({ role: 'model', parts: [{ text: reply }] });
-                    saveHistoryToDevice(); // Guardar automáticamente al recibir respuesta
-                } else {
-                    throw new Error("Estructura de respuesta no válida.");
-                }
-            } catch (error) {
-                if (retryCount < maxRetries) {
-                    const backoffDelay = Math.pow(2, retryCount) * 1000;
-                    await new Promise(res => setTimeout(res, backoffDelay));
-                    return fetchGeminiResponse(retryCount + 1);
-                }
-                
-                hideTypingIndicator();
-                const errorMsg = 'Lo siento, Stephanie, hubo un pequeño problema al conectarme. ¿Me lo podrías repetir? 🌸';
-                renderMessage({ role: 'model', text: errorMsg });
-                // Nota: Opcionalmente puedes agregar el error al historial o dejarlo solo visual
-            } finally {
-                userInput.disabled = false;
-                sendButton.disabled = false;
-                userInput.focus();
-            }
+        if (!response.ok) {
+            const errData = await response.json();
+            console.error("Detalle del error de la API:", errData);
+            throw new Error(`Error en la solicitud: ${response.status}`);
         }
+
+        const result = await response.json();
+        hideTypingIndicator();
+
+        const candidate = result.candidates?.[0];
+        if (candidate && candidate.content?.parts?.[0]?.text) {
+            const reply = candidate.content.parts[0].text;
+            renderMessage({ role: 'model', text: reply });
+            chatHistory.push({ role: 'model', parts: [{ text: reply }] });
+            saveHistoryToDevice(); // Guarda automáticamente en el dispositivo
+        } else {
+            throw new Error("Estructura de respuesta no válida.");
+        }
+    } catch (error) {
+        console.error("Error capturado:", error);
+        if (retryCount < maxRetries) {
+            const backoffDelay = Math.pow(2, retryCount) * 1000;
+            await new Promise(res => setTimeout(res, backoffDelay));
+            return fetchGeminiResponse(retryCount + 1);
+        }
+        
+        hideTypingIndicator();
+        renderMessage({ 
+            role: 'model', 
+            text: 'Lo siento, Stephanie, hubo un pequeño problema al conectarme. ¿Me lo podrías repetir? 🌸' 
+        });
+    } finally {
+        userInput.disabled = false;
+        sendButton.disabled = false;
+        userInput.focus();
+    }
+}
 
         // --- EVENT LISTENERS ---
 
