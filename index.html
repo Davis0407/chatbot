@@ -266,11 +266,11 @@
 
         async function fetchGeminiResponse(retryCount = 0) {
             const maxRetries = 3;
-            const apiKey = "AQ.Ab8RN6JWDR5zLqv8VJq06O71NafiYg5n8ra_TuJKSKiw_LnFrQ"; // Tu clave original
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            const token = "AQ.Ab8RN6JWDR5zLqv8VJq06O71NafiYg5n8ra_TuJKSKiw_LnFrQ"; // Tu token AQ original
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
 
             const payload = {
-                system_instruction: { // <--- Ajustado con guion bajo
+                system_instruction: {
                     parts: [{ text: SYSTEM_INSTRUCTION }]
                 },
                 contents: chatHistory
@@ -279,7 +279,10 @@
             try {
                 const response = await fetch(apiUrl, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` // Autenticación Bearer para tokens AQ
+                    },
                     body: JSON.stringify(payload)
                 });
 
